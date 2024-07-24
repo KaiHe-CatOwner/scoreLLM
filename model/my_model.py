@@ -82,5 +82,5 @@ class MyCustomModel(nn.Module):
         attention_mask = kwargs["attention_mask"]
         labels = kwargs["labels"]
     
-        output = self.llm(input_ids=input_ids[0], attention_mask=attention_mask[0], labels=labels[0])
+        output = self.llm(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
         return output

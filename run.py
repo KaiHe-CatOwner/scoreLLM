@@ -18,7 +18,7 @@ class ScriptArguments:
     """
 
     # system config
-    gpu: Optional[str] = field(default="2", metadata={"help": "gpu"})
+    gpu: Optional[str] = field(default="7", metadata={"help": "gpu"})
     load_in_8bit: Optional[bool] = field(default=False, metadata={"help": "load the model in 8 bits precision"})
     load_in_4bit: Optional[bool] = field(default=False, metadata={"help": "load the model in 4 bits precision"})
     trust_remote_code: Optional[bool] = field(default=False, metadata={"help": "Enable `trust_remote_code`"})
@@ -30,7 +30,7 @@ class ScriptArguments:
     
     # data
     select_data_num: Optional[int] = field(default=-100, metadata={"help": "the number of training data， -1 mean use all data"})
-    dataset_name: Optional[str] = field(default="/hpc/home/kai_he/workshop/My_project/Score_LLM/data/human_annotation_data_2_out_prompt.jsonl", metadata={"help": "data "})
+    dataset_name: Optional[str] = field(default="/raid/hpc/hekai/WorkShop/My_project/Score_LLM/data/human_annotation_data_2_out_prompt.jsonl", metadata={"help": "data "})
     dataset_text_field: Optional[str] = field(default="text", metadata={"help": "the text field of the dataset"})
     
     # log and save model
