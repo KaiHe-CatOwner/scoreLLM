@@ -24,14 +24,23 @@ def clip_path_map(path):
 
 def my_compute_metrics(p):
     predictions, labels = p
-    predictions = np.argmax(predictions, axis=-1)
+    # predictions = np.argmax(predictions, axis=-1)
     
-    predictions = predictions[:, 2:]
-
     mask = labels != -100
+
     correct = (labels == predictions) & mask
     accuracy =  round(np.mean(correct) *100, 2)
 
     return {
         'accuracy': accuracy,
     }
+
+def preprocess_logits_for_metrics(logits, labels):
+    """
+    Original Trainer may have a memory leak. 
+    This is a workaround to avoid storing too many tensors that are not needed.
+    """
+
+    pred_ids = torch.argmax(logits, dim=-1)
+
+    return pred_ids, labels

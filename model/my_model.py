@@ -20,24 +20,23 @@ class MyCustomModel(nn.Module):
     
     def generate(self, *args, **kwargs):
         generation_config = GenerationConfig(
-                max_length=100,
-                temperature=1.0,
-                top_k=50,
-                top_p=0.95,
-                num_return_sequences=1,
-                repetition_penalty=1.1,
-                do_sample=True,
-                pad_token_id=self.llm_tokenizer.eos_token_id,
-                bos_token_id=self.llm_tokenizer.bos_token_id,
+                max_length=kwargs["max_length"],
+                max_new_tokens=kwargs["max_new_tokens"],
+                temperature=kwargs["temperature"],
+                top_k=kwargs["top_k"],
+                top_p=kwargs["top_p"],
+                num_return_sequences=kwargs["num_return_sequences"],
+                repetition_penalty=kwargs["repetition_penalty"],
+                do_sample=kwargs["do_sample"],
+                pad_token_id=kwargs["pad_token_id"],
+                bos_token_id=kwargs["bos_token_id"],
             )
         
         with torch.no_grad():
             input_ids = kwargs["input_ids"]
-            image = kwargs["image"]
             attention_mask = kwargs["attention_mask"]
-            fusion_embs = self.get_fusion_embedding(input_ids, image)
-            attention_mask = self.pad_attention_fusion(fusion_embs.size(1), attention_mask)
-            res = self.llm.generate(inputs_embeds=fusion_embs, attention_mask=attention_mask, generation_config=generation_config)
+          
+            res = self.llm.generate(input_ids=input_ids, attention_mask=attention_mask, generation_config=generation_config)
 
         generate_list = []
         for item in res:

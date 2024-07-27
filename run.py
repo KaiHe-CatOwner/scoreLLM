@@ -1,7 +1,7 @@
 import os
 from transformers import TrainingArguments, AutoTokenizer, HfArgumentParser
 from utils.my_trainer import CustomTrainer
-from utils.utils import my_compute_metrics,seed_everything
+from utils.utils import my_compute_metrics,seed_everything,preprocess_logits_for_metrics
 from typing import Optional
 from dataclasses import dataclass, field
 from model.my_model import MyCustomModel
@@ -18,7 +18,7 @@ class ScriptArguments:
     """
 
     # system config
-    gpu: Optional[str] = field(default="7", metadata={"help": "gpu"})
+    gpu: Optional[str] = field(default="6,7", metadata={"help": "gpu"})
     load_in_8bit: Optional[bool] = field(default=False, metadata={"help": "load the model in 8 bits precision"})
     load_in_4bit: Optional[bool] = field(default=False, metadata={"help": "load the model in 4 bits precision"})
     trust_remote_code: Optional[bool] = field(default=False, metadata={"help": "Enable `trust_remote_code`"})
@@ -26,11 +26,11 @@ class ScriptArguments:
     seed: Optional[int] = field(default=42, metadata={"help": "seed"})
 
     # model
-    llm_name: Optional[str] = field(default="meta-llama/Meta-Llama-3-8B-Instruct", metadata={"help": "the model name"})
+    llm_name: Optional[str] = field(default="meta-llama/Meta-Llama-3-8B-Instruct", metadata={"help": "meta-llama/Meta-Llama-3-8B-Instruct，meta-llama/Meta-Llama-3.1-8B-Instruct "})
     
     # data
     select_data_num: Optional[int] = field(default=-100, metadata={"help": "the number of training data， -1 mean use all data"})
-    dataset_name: Optional[str] = field(default="/raid/hpc/hekai/WorkShop/My_project/Score_LLM/data/human_annotation_data_2_out_prompt.jsonl", metadata={"help": "data "})
+    dataset_name: Optional[str] = field(default="/raid/hpc/hekai/WorkShop/My_project/Score_LLM/data/human_annotation_data_2_out_prompt_v2.jsonl", metadata={"help": "data "})
     dataset_text_field: Optional[str] = field(default="text", metadata={"help": "the text field of the dataset"})
     
     # log and save model
@@ -38,23 +38,24 @@ class ScriptArguments:
     output_dir: Optional[str] = field(default="output", metadata={"help": "the output directory"})
     logging_steps: Optional[int] = field(default=5, metadata={"help": "the number of logging steps"})
     max_steps: Optional[int] = field(default=-1, metadata={"help": "the number of training steps"})
-    save_steps: Optional[int] = field(default=200, metadata={"help": "Number of updates steps before two checkpoint saves"})
     save_total_limit: Optional[int] = field(default=10, metadata={"help": "Limits total number of checkpoints."})
+    save_steps: Optional[int] = field(default=100, metadata={"help": "Number of updates steps before two checkpoint saves"})
     
     llm_requires_grad: Optional[bool] = field(default=True, metadata={"help": "True or  False"})
     resume_from_checkpoint: Optional[bool] = field(default=False, metadata={"help": "True or  /output/checkpoint-1400"})
     
     # training hypterparam
     learning_rate: Optional[float] = field(default=2.0e-5, metadata={"help": "the learning rate"})
-    train_batch_size: Optional[int] = field(default=32, metadata={"help": "the batch size"})
-    eval_batch_size: Optional[int] = field(default=32, metadata={"help": "the batch size"})
+    train_batch_size: Optional[int] = field(default=1, metadata={"help": "the batch size"})
+    eval_batch_size: Optional[int] = field(default=1, metadata={"help": "the batch size"})
     max_seq_length: Optional[int] = field(default=2048, metadata={"help": "Input sequence length"})
     gradient_accumulation_steps: Optional[int] = field(default=8, metadata={"help": "the number of gradient accumulation steps"})
-    num_train_epochs: Optional[int] = field(default=50, metadata={"help": "the number of training epochs"})
+    num_train_epochs: Optional[int] = field(default=5, metadata={"help": "the number of training epochs"})
         
     # eval
     evaluation_strategy: Optional[str] = field(default="steps", metadata={"help": "epoch, step"})
-    eval_steps: Optional[int] = field(default=500, metadata={"help": "eval_steps"})
+    eval_steps: Optional[int] = field(default=100000, metadata={"help": "eval_steps"})
+    eval_accumulation_steps: Optional[int] = field(default=10, metadata={"help": "eval_accumulation_steps"})
     
     # unused
     push_to_hub: Optional[bool] = field(default=False, metadata={"help": "Push the model to HF Hub"})
@@ -84,7 +85,7 @@ tokenizer.truncation_side = 'left'
 def formatting_func(examples):
     question = examples["question"]
     answer = examples["answer"]
-    text = f"{tokenizer.bos_token}{question}{tokenizer.eos_token} " + f"{tokenizer.bos_token}{answer}{tokenizer.eos_token}\n"
+    text = f"{tokenizer.bos_token} Question : {question} {tokenizer.eos_token} " + f"{tokenizer.bos_token} Answer : {answer} {tokenizer.eos_token}"
     examples["text"] = text
     return examples
 
@@ -128,6 +129,7 @@ training_args = TrainingArguments(
     bf16=True,
     warmup_ratio=0.1,
     evaluation_strategy=script_args.evaluation_strategy,
+    # eval_accumulation_steps=script_args.eval_accumulation_steps,
     eval_steps=script_args.eval_steps,
     logging_first_step=True,
     remove_unused_columns=False,
@@ -156,11 +158,14 @@ trainer = CustomTrainer(
     peft_config=peft_config,
     tokenizer=tokenizer,
     data_collator=data_collator,
-    compute_metrics=my_compute_metrics
+    compute_metrics=my_compute_metrics,
+    preprocess_logits_for_metrics=preprocess_logits_for_metrics
 )
 
 
 trainer.train(resume_from_checkpoint=script_args.resume_from_checkpoint)
+
+
 
 
 
