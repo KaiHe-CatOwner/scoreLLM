@@ -53,9 +53,8 @@ class MyDataCollatorForLanguageModeling(DataCollatorMixin):
         
 
         if isinstance(examples[0], Mapping):
-            batch = pad_without_fast_tokenizer_warning(
-                self.tokenizer, examples, return_tensors="pt", pad_to_multiple_of=self.pad_to_multiple_of
-            )
+            batch = pad_without_fast_tokenizer_warning(self.tokenizer, examples, return_tensors="pt", 
+                pad_to_multiple_of=self.pad_to_multiple_of, max_length=2048, padding='max_length')
         else:
             batch = {
                 "input_ids": _torch_collate_batch(examples, self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)

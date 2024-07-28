@@ -71,7 +71,6 @@ class MyCustomModel(nn.Module):
                     token=token,
                     use_cache= True,
                 )
-        llm.resize_token_embeddings(len(self.llm_tokenizer))
         return llm
     
   

@@ -68,7 +68,8 @@ parser = HfArgumentParser(ScriptArguments)
 script_args = parser.parse_args_into_dataclasses()[0]
 seed_everything(script_args.seed)
 
-os.environ["WANDB_MODE"] = "offline"
+# os.environ["WANDB_MODE"] = "offline"
+os.environ["WANDB_MODE"] = "online"
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = script_args.gpu
 
@@ -79,7 +80,7 @@ tokenizer = AutoTokenizer.from_pretrained(script_args.llm_name)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "right"
 tokenizer.truncation_side = 'left'
-
+tokenizer.model_max_length = script_args.max_seq_length
 
 
 def formatting_func(examples):
